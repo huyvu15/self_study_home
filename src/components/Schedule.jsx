@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import Loading from './Loading';
 import './Schedule.css';
 
 const MONTH_NAMES = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
@@ -87,7 +88,7 @@ function Schedule({ onBack }) {
         </div>
 
         {loading ? (
-          <div className="schedule-loading">Đang tải lịch...</div>
+          <Loading text="Đang tải lịch..." />
         ) : (
           <>
             <div className="schedule-calendar">

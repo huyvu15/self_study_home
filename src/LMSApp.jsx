@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { api } from './services/api';
 import Auth from './components/Auth';
 import CourseDetail from './components/CourseDetail';
+import Loading from './components/Loading';
 import Profile from './components/Profile';
 import Schedule from './components/Schedule';
 import './LMSApp.css';
@@ -370,8 +371,7 @@ function LMSApp() {
 
                         {loading ? (
                             <div className="lms-loading">
-                                <div className="lms-spinner" />
-                                <p>Đang tải khóa học...</p>
+                                <Loading text="Đang tải khóa học..." />
                             </div>
                         ) : courses.length === 0 ? (
                             <div className="lms-empty">

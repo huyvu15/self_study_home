@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import Loading from './Loading';
 import './Profile.css';
 
 const GENDER_OPTIONS = [
@@ -96,7 +97,7 @@ function Profile({ user, onBack, onProfileUpdated }) {
   if (loading) {
     return (
       <div className="profile-page">
-        <div className="profile-loading">Đang tải hồ sơ...</div>
+        <Loading text="Đang tải hồ sơ..." />
       </div>
     );
   }

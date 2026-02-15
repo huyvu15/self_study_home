@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Loading from './Loading';
 import './CourseDetail.css';
 
 function CourseDetail({ courseName, onBack }) {
@@ -28,7 +29,7 @@ function CourseDetail({ courseName, onBack }) {
     };
 
     if (loading) {
-        return <div className="loading">⏳ Đang tải khóa học...</div>;
+        return <Loading text="Đang tải khóa học..." />;
     }
 
     if (!courseData) {

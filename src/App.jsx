@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './index.css';
 import { api } from './services/api';
+import Loading from './components/Loading';
 
 // Import all backgrounds
 import bg1 from './assets/background/3d-rendering-cartoon-welcome-door.avif';
@@ -179,10 +180,7 @@ function App() {
     if (loading) {
         return (
             <div className="w-full h-screen flex items-center justify-center bg-gray-900 text-white">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-violet-500 mx-auto mb-4"></div>
-                    <p className="text-xl">Loading...</p>
-                </div>
+                <Loading text="Loading..." className="lottie-loading--fullscreen" />
             </div>
         );
     }

@@ -1,0 +1,34 @@
+.lottie-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--text-muted, #64748b);
+  font-size: 0.9375rem;
+}
+
+.lottie-loading__animation {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 12px;
+}
+
+.lottie-loading__text {
+  margin: 0;
+}
+
+/* Full-screen variant (e.g. App.jsx initial load) */
+.lottie-loading--fullscreen {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.lottie-loading--fullscreen .lottie-loading__animation {
+  width: 160px;
+  height: 160px;
+}
+
+.lottie-loading--fullscreen {
+  color: inherit;
+}
