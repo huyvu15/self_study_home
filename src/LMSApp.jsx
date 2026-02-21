@@ -25,8 +25,11 @@ function LMSApp() {
     const [sortBy, setSortBy] = useState('name-asc');
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [roomModal, setRoomModal] = useState(null);
-    const [roomForm, setRoomForm] = useState({ room_id: '', room_name: '', meet_link: '', max_cam: 20, type: 'Focus', status: 'open' });
+    const [roomForm, setRoomForm] = useState({ room_id: '', room_name: '', meet_link: '', max_cam: 20, type: 'Focus', status: 'open', thumbnail_url: '', description: '', tagline: '', category: '' });
     const [roomSaveLoading, setRoomSaveLoading] = useState(false);
+    const [roomSearch, setRoomSearch] = useState('');
+    const [roomFilter, setRoomFilter] = useState('all'); // all | basic | advanced | indepth
+    const [featuredRoomIndex, setFeaturedRoomIndex] = useState(0);
 
     useEffect(() => {
         const userData = localStorage.getItem('lms_user');
@@ -155,7 +158,7 @@ function LMSApp() {
     };
 
     const openAddRoom = () => {
-        setRoomForm({ room_id: '', room_name: '', meet_link: 'https://meet.google.com/new', max_cam: 20, type: 'Focus', status: 'open' });
+        setRoomForm({ room_id: '', room_name: '', meet_link: 'https://meet.google.com/new', max_cam: 20, type: 'Focus', status: 'open', thumbnail_url: '', description: '', tagline: '', category: '' });
         setRoomModal('add');
     };
 
@@ -167,6 +170,10 @@ function LMSApp() {
             max_cam: room.max_cam ?? 20,
             type: room.type || 'Focus',
             status: room.status || 'open',
+            thumbnail_url: room.thumbnail_url || '',
+            description: room.description || '',
+            tagline: room.tagline || '',
+            category: room.category || '',
         });
         setRoomModal('edit');
     };
@@ -191,6 +198,10 @@ function LMSApp() {
                     max_cam: Number(roomForm.max_cam) || 20,
                     type: roomForm.type,
                     status: roomForm.status,
+                    thumbnail_url: roomForm.thumbnail_url || '',
+                    description: roomForm.description || '',
+                    tagline: roomForm.tagline || '',
+                    category: roomForm.category || '',
                     email: user?.email,
                 };
                 if (roomForm.room_id) payload.room_id = roomForm.room_id;
@@ -208,6 +219,10 @@ function LMSApp() {
                     max_cam: Number(roomForm.max_cam) || 20,
                     type: roomForm.type,
                     status: roomForm.status,
+                    thumbnail_url: roomForm.thumbnail_url != null ? roomForm.thumbnail_url : undefined,
+                    description: roomForm.description != null ? roomForm.description : undefined,
+                    tagline: roomForm.tagline != null ? roomForm.tagline : undefined,
+                    category: roomForm.category != null ? roomForm.category : undefined,
                     email: user?.email,
                 });
                 if (res.success) {
@@ -249,6 +264,34 @@ function LMSApp() {
         return list;
     }, [courses, searchQuery, sortBy]);
 
+    const roomTypeToCategory = (type) => {
+        const t = (type || '').toLowerCase();
+        if (t === 'timer') return 'advanced';
+        if (t === 'relax') return 'indepth';
+        return 'basic';
+    };
+    const filteredRooms = useMemo(() => {
+        let list = [...rooms];
+        const q = (roomSearch || '').toLowerCase().trim();
+        if (q) {
+            list = list.filter((r) =>
+                (r.room_name || '').toLowerCase().includes(q) ||
+                (r.room_id || '').toLowerCase().includes(q) ||
+                (r.type || '').toLowerCase().includes(q)
+            );
+        }
+        if (roomFilter !== 'all') {
+            list = list.filter((r) => roomTypeToCategory(r.type) === roomFilter);
+        }
+        return list;
+    }, [rooms, roomSearch, roomFilter]);
+
+    useEffect(() => {
+        if (currentView === 'study-rooms' && filteredRooms.length > 0 && featuredRoomIndex >= filteredRooms.length) {
+            setFeaturedRoomIndex(0);
+        }
+    }, [currentView, filteredRooms.length, featuredRoomIndex]);
+
     if (!user) {
         return <Auth onLoginSuccess={handleLoginSuccess} />;
     }
@@ -271,15 +314,15 @@ function LMSApp() {
         return <Schedule onBack={() => setCurrentView('courses')} />;
     }
 
-    const breadcrumb = currentView === 'study-rooms' ? 'Phòng tự học' : currentView === 'schedule' ? 'Lịch học' : 'Trang chủ';
+    const breadcrumb = currentView === 'study-rooms' ? '' : currentView === 'schedule' ? 'Lịch học' : 'Trang chủ';
 
     return (
         <div className="lms-app">
             <header className="lms-header">
                 <div className="lms-header-inner">
                     <a href="#" className="lms-logo" onClick={(e) => { e.preventDefault(); handleBackToCourses(); }}>
-                        <span className="lms-logo-icon">◉</span>
-                        <span className="lms-logo-text">LMS</span>
+                        <img src="/logo.png" alt="Adine" className="lms-logo-img" onError={(e) => { e.target.style.display = 'none'; if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'inline'; }} />
+                        <span className="lms-logo-fallback" style={{ display: 'none' }}>Adine</span>
                     </a>
                     <nav className="lms-nav">
                         <button type="button" className={`lms-nav-item ${currentView === 'courses' ? 'active' : ''}`} onClick={handleBackToCourses}>
@@ -325,9 +368,7 @@ function LMSApp() {
             </header>
 
             <main className="lms-main">
-                <div className="lms-breadcrumb">
-                    <span>{ breadcrumb }</span>
-                </div>
+                
 
                 {currentView === 'courses' && (
                     <>
@@ -422,54 +463,157 @@ function LMSApp() {
                 )}
 
                 {currentView === 'study-rooms' && (
-                    <div className="lms-rooms">
-                        <div className="lms-rooms-head">
-                            <h2 className="lms-section-title">Phòng tự học</h2>
+                    <div className="lms-rooms lms-rooms-ui">
+                        <div className="lms-rooms-header-strip">
+                            <div className="lms-rooms-header-left">
+                                <div className="lms-rooms-search-wrap">
+                                    <span className="lms-rooms-search-icon">🔍</span>
+                                    <input
+                                        type="search"
+                                        className="lms-rooms-search"
+                                        placeholder="Tìm phòng học..."
+                                        value={roomSearch}
+                                        onChange={(e) => setRoomSearch(e.target.value)}
+                                    />
+                                    <button type="button" className="lms-rooms-search-btn" title="Tìm kiếm">✓</button>
+                                    <button type="button" className="lms-rooms-filter-btn" title="Bộ lọc">☰</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="lms-rooms-filters">
+                            <span className="lms-rooms-filters-label">Lọc phòng:</span>
+                            {[
+                                { id: 'all', label: 'Tất cả' },
+                                { id: 'basic', label: 'Cơ bản' },
+                                { id: 'advanced', label: 'Nâng cao' },
+                                { id: 'indepth', label: 'Chuyên sâu' },
+                            ].map((f) => (
+                                <button
+                                    key={f.id}
+                                    type="button"
+                                    className={`lms-rooms-filter-tab ${roomFilter === f.id ? 'active' : ''}`}
+                                    onClick={() => setRoomFilter(f.id)}
+                                >
+                                    {f.label}
+                                </button>
+                            ))}
                             {isTeacher && (
-                                <button type="button" className="lms-btn-primary" onClick={openAddRoom}>
+                                <button type="button" className="lms-btn-primary lms-rooms-add-btn" onClick={openAddRoom}>
                                     + Thêm phòng
                                 </button>
                             )}
                         </div>
-                        {rooms.length === 0 ? (
+
+                        {filteredRooms.length === 0 ? (
                             <div className="lms-empty">
                                 <div className="lms-empty-icon">🏠</div>
                                 <h2>Chưa có phòng</h2>
                                 <p>{ isTeacher ? 'Bấm "Thêm phòng" để tạo phòng học.' : 'Liên hệ admin để được mở phòng học.' }</p>
                                 {isTeacher && (
-                                    <button type="button" className="lms-btn-primary" style={{ marginTop: 16 }} onClick={openAddRoom}>
-                                        + Thêm phòng
-                                    </button>
+                                    <button type="button" className="lms-btn-primary" style={{ marginTop: 16 }} onClick={openAddRoom}>+ Thêm phòng</button>
                                 )}
                             </div>
                         ) : (
-                            <div className="lms-rooms-grid">
-                                {rooms.map((room) => (
-                                    <div key={room.room_id} className="lms-room-card">
-                                        {isTeacher && (
-                                            <div className="lms-room-actions">
-                                                <button type="button" className="lms-btn-icon" onClick={(e) => { e.stopPropagation(); openEditRoom(room); }} title="Sửa">✏️</button>
-                                                <button type="button" className="lms-btn-icon danger" onClick={(e) => { e.stopPropagation(); handleDeleteRoom(room); }} title="Xóa">🗑️</button>
-                                            </div>
-                                        )}
-                                        <div className="lms-room-head">
-                                            <h3>{ room.room_name }</h3>
-                                            <span className="lms-room-type">{ room.type }</span>
-                                        </div>
-                                        <div className="lms-room-meta">
-                                            <span>👥 { room.count ?? 0 } / { room.max_cam ?? 20 }</span>
+                            <>
+                                <section className="lms-rooms-featured">
+                                    <div className="lms-rooms-carousel">
+                                        <button
+                                            type="button"
+                                            className="lms-carousel-arrow prev"
+                                            onClick={() => setFeaturedRoomIndex((i) => (i - 1 + filteredRooms.length) % filteredRooms.length)}
+                                            aria-label="Trước"
+                                        >
+                                            ‹
+                                        </button>
+                                        <div className="lms-carousel-inner">
+                                            {(() => {
+                                                const feat = filteredRooms[featuredRoomIndex];
+                                                if (!feat) return null;
+                                                const catLabel = roomFilter === 'all' ? (feat.type === 'Timer' ? 'NÂNG CAO' : feat.type === 'Relax' ? 'CHUYÊN SÂU' : 'CƠ BẢN') : (roomFilter === 'basic' ? 'CƠ BẢN' : roomFilter === 'advanced' ? 'NÂNG CAO' : 'CHUYÊN SÂU');
+                                                return (
+                                                    <>
+                                                        <div className="lms-carousel-bg" style={feat.thumbnail_url ? { backgroundImage: `url(${feat.thumbnail_url})`, backgroundSize: 'cover', opacity: 0.5 } : {}} />
+                                                        <div className="lms-carousel-content">
+                                                            <div className="lms-carousel-left">
+                                                                <span className="lms-carousel-tag">{ catLabel }</span>
+                                                                <h3 className="lms-carousel-title">{ feat.room_name }</h3>
+                                                                <p className="lms-carousel-tagline">{ feat.tagline || (feat.meet_link ? 'Tham gia phòng học trực tuyến.' : 'Đợi đỗ đại học rồi mới được nghỉ ngơi.') }</p>
+                                                                <p className="lms-carousel-stats">{ feat.count ?? 0 } thành viên · { feat.count ?? 0 } đang học</p>
+                                                                <div className="lms-carousel-btns">
+                                                                    <button type="button" className="lms-btn-join-carousel" onClick={() => handleJoinRoom(feat)} disabled={feat.count >= (feat.max_cam ?? 999)}>
+                                                                        Tham gia ngay
+                                                                    </button>
+                                                                    <button type="button" className="lms-btn-detail-carousel" onClick={() => handleJoinRoom(feat)}>
+                                                                        Xem chi tiết
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <div className="lms-carousel-avatars">
+                                                                <div className="lms-carousel-av lms-carousel-av-logo">
+                                                                    <img src="/logo.png" alt="Adine" onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling?.classList.add('show'); }} />
+                                                                    <span className="lms-carousel-av-fallback">A</span>
+                                                                </div>
+                                                                <div className="lms-carousel-av lms-carousel-av-logo">
+                                                                    <img src="/logo.png" alt="" onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling?.classList.add('show'); }} />
+                                                                    <span className="lms-carousel-av-fallback">A</span>
+                                                                </div>
+                                                                <div className="lms-carousel-av lms-carousel-av-logo">
+                                                                    <img src="/logo.png" alt="" onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling?.classList.add('show'); }} />
+                                                                    <span className="lms-carousel-av-fallback">A</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                         <button
                                             type="button"
-                                            className="lms-btn-join"
-                                            onClick={() => handleJoinRoom(room)}
-                                            disabled={room.count >= (room.max_cam ?? 999)}
+                                            className="lms-carousel-arrow next"
+                                            onClick={() => setFeaturedRoomIndex((i) => (i + 1) % filteredRooms.length)}
+                                            aria-label="Sau"
                                         >
-                                            {room.count >= (room.max_cam ?? 999) ? 'Đã đầy' : 'Tham gia'}
+                                            ›
                                         </button>
                                     </div>
-                                ))}
-                            </div>
+                                </section>
+
+                                <h2 className="lms-rooms-list-title">Danh sách tất cả phòng trong khu vực này</h2>
+                                <div className="lms-rooms-grid lms-rooms-grid-cards">
+                                    {filteredRooms.map((room) => (
+                                        <article key={room.room_id} className="lms-room-card lms-room-card-new">
+                                            <div className="lms-room-card-thumb">
+                                                {room.thumbnail_url ? (
+                                                    <img src={room.thumbnail_url} alt="" className="lms-room-card-thumb-img" />
+                                                ) : (
+                                                    <div className="lms-room-card-thumb-placeholder" />
+                                                )}
+                                            </div>
+                                            <div className="lms-room-card-body">
+                                                {isTeacher && (
+                                                    <div className="lms-room-actions">
+                                                        <button type="button" className="lms-btn-icon" onClick={(e) => { e.stopPropagation(); openEditRoom(room); }} title="Sửa">✏️</button>
+                                                        <button type="button" className="lms-btn-icon danger" onClick={(e) => { e.stopPropagation(); handleDeleteRoom(room); }} title="Xóa">🗑️</button>
+                                                    </div>
+                                                )}
+                                                <h3>{ room.room_name }</h3>
+                                                <p className="lms-room-card-desc">{ room.description || room.tagline || (room.meet_link ? 'Tham gia Meet để học cùng nhau.' : 'Phòng tự học.') }</p>
+                                                <p className="lms-room-card-stats">{ room.count ?? 0 } thành viên · { room.count ?? 0 } đang học</p>
+                                                <span className="lms-room-card-tag">{ (room.category && room.category.toUpperCase()) || (room.type === 'Timer' ? 'NÂNG CAO' : room.type === 'Relax' ? 'CHUYÊN SÂU' : 'CƠ BẢN') }</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="lms-btn-join lms-btn-join-card"
+                                                onClick={() => handleJoinRoom(room)}
+                                                disabled={room.count >= (room.max_cam ?? 999)}
+                                            >
+                                                {room.count >= (room.max_cam ?? 999) ? 'Đã đầy' : 'Tham gia ngay'}
+                                            </button>
+                                        </article>
+                                    ))}
+                                </div>
+                            </>
                         )}
                     </div>
                 )}
@@ -522,6 +666,46 @@ function LMSApp() {
                                     />
                                 </div>
                                 <div className="lms-form-group">
+                                    <label>Ảnh phòng (URL)</label>
+                                    <input
+                                        type="url"
+                                        className="lms-input"
+                                        value={roomForm.thumbnail_url}
+                                        onChange={(e) => handleRoomFormChange('thumbnail_url', e.target.value)}
+                                        placeholder="https://... hoặc link Drive ảnh"
+                                    />
+                                </div>
+                                <div className="lms-form-group">
+                                    <label>Mô tả</label>
+                                    <textarea
+                                        className="lms-input"
+                                        rows={2}
+                                        value={roomForm.description}
+                                        onChange={(e) => handleRoomFormChange('description', e.target.value)}
+                                        placeholder="Mô tả ngắn về phòng học"
+                                    />
+                                </div>
+                                <div className="lms-form-group">
+                                    <label>Tagline</label>
+                                    <input
+                                        type="text"
+                                        className="lms-input"
+                                        value={roomForm.tagline}
+                                        onChange={(e) => handleRoomFormChange('tagline', e.target.value)}
+                                        placeholder="VD: Đợi đỗ đại học rồi mới được nghỉ ngơi."
+                                    />
+                                </div>
+                                <div className="lms-form-group">
+                                    <label>Danh mục (Cơ bản / Nâng cao / Chuyên sâu)</label>
+                                    <input
+                                        type="text"
+                                        className="lms-input"
+                                        value={roomForm.category}
+                                        onChange={(e) => handleRoomFormChange('category', e.target.value)}
+                                        placeholder="VD: Cơ bản"
+                                    />
+                                </div>
+                                <div className="lms-form-group">
                                     <label>Số người tối đa</label>
                                     <input
                                         type="number"
@@ -570,7 +754,7 @@ function LMSApp() {
 
             <footer className="lms-footer">
                 <div className="lms-footer-inner">
-                    <span>LMS — Lớp học trực tuyến</span>
+                    <span>Adine — Lớp học trực tuyến</span>
                     <span className="lms-footer-dot">·</span>
                     <button type="button" className="lms-footer-link" onClick={() => setCurrentView('schedule')}>Lịch học</button>
                     <span className="lms-footer-dot">·</span>

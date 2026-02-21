@@ -201,9 +201,8 @@ function App() {
                 {/* Header */}
                 <header className="flex justify-between items-center p-6 glass-panel mx-4 mt-4 !bg-opacity-20 !backdrop-blur-md rounded-2xl animate-fade-in">
                     <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-lg">
-                            Self<span className="text-violet-400">Study</span> Room
-                        </h1>
+                        <img src="/logo.png" alt="Adine" className="h-9 w-auto max-w-[140px] object-contain" onError={(e) => { e.target.style.display = 'none'; if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'block'; }} />
+                        <span className="text-2xl font-bold tracking-tight text-white drop-shadow-lg" style={{ display: 'none' }}>Adine</span>
                     </div>
 
                     <div className="flex gap-4 items-center">

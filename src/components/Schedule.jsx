@@ -47,6 +47,12 @@ function Schedule({ onBack }) {
     setSelectedDate(null);
   };
 
+  const goToday = () => {
+    const d = new Date();
+    setCurrent({ month: d.getMonth() + 1, year: d.getFullYear() });
+    setSelectedDate(todayStr);
+  };
+
   const firstDay = new Date(current.year, current.month - 1, 1);
   const lastDay = new Date(current.year, current.month, 0);
   const startWeekday = firstDay.getDay();
@@ -80,10 +86,13 @@ function Schedule({ onBack }) {
             ‹ Tháng trước
           </button>
           <h2 className="schedule-title">
-            {MONTH_NAMES[current.month - 1]} / {current.year}
+            {MONTH_NAMES[current.month - 1]} {current.year}
           </h2>
           <button type="button" className="schedule-nav-btn" onClick={nextMonth}>
             Tháng sau ›
+          </button>
+          <button type="button" className="schedule-nav-btn schedule-today-btn" onClick={goToday}>
+            Hôm nay
           </button>
         </div>
 
